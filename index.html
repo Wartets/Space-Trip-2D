@@ -1,12 +1,51 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <title>Space Trip</title>
-  <link rel="stylesheet" href="styles.css">
+	<meta charset="UTF-8">
+	<title>Space Trip 2D</title>
+	<link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="https://wartets.github.io/N-Body-Problem/image/browser-icon.png">
+	<meta name="keywords" content="Wartets, Colin Bossu, game">
+    <meta name="robots" content="index, follow">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<link rel="apple-touch-icon" href="https://wartets.github.io/N-Body-Problem/image/app-icon.jpg">
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="SPACE TRIP 2D">
+    <meta property="og:description" content="Space ship game about destroying Asteroids!">
+    <meta property="og:image" content="https://wartets.github.io/N-Body-Problem/image/app-icon.jpg">
+    <meta property="og:type" content="website">
 </head>
+<footer id="gameFooter" class="">
+	<p>&copy; 2025. All rights reserved. Designed by 
+		<a href="https://wartets.github.io/Wartets/" target="_blank">&#x2197;Wartets</a>.
+		<wbr>Check out more projects on <a href="https://github.com/wartets" target="_blank">&#x2197;GitHub</a>.
+	</p>
+</footer>
 <body>
-  <canvas id="gameCanvas"></canvas>
-  <script src="script.js"></script>
+	<canvas id="gameCanvas"></canvas>
+	<div id="gameOverWindow" class="hidden">
+		<h1>GAME OVER</h1>
+		<button onclick="restartGame()">RESTART</button>
+	</div>
+	<div id="startOverlay" class="overlay">
+		<div class="overlay-content">
+			<h1>SPACE TRIP</h1>
+			<button id="startButton">START</button>
+		</div>
+	</div>
+	<div id="helpWindow">
+		<p><strong>Controls:</strong></p>
+		<p><kbd>←</kbd>/<kbd>→</kbd> or <kbd>A</kbd>/<kbd>D</kbd>: Turn</p>
+		<p><kbd>↑</kbd>/<kbd>↓</kbd> or <kbd>W</kbd>/<kbd>S</kbd>: Move</p>
+		<p><kbd>Space</kbd>: Shoot</p>
+	</div>
+	<div id="gameOverlay">
+		<div>Asteroids Present: <span id="asteroidsPresent">0</span></div>
+		<div>Asteroids Destroyed: <span id="asteroidsDestroyed">0</span></div>
+		<div>Time Played: <span id="timePlayed">0.0</span> s</div>
+		<div>Waves Passed: <span id="wavesPassed">0</span></div>
+		<div>Missiles Fired: <span id="missilesFiredText">0</span></div>
+	</div>
+	<script src="script.js"></script>
 </body>
 </html>

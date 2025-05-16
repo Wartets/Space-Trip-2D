@@ -1,11 +1,146 @@
 body {
-  margin: 0;
-  overflow: hidden;
-  background-color: black;
+	margin: 0;
+	overflow: hidden;
+	background-color: black;
 }
 
 #gameCanvas {
-  display: block;
-  width: 100vw;
-  height: 100vh;
+	display: block;
+	width: 100vw;
+	height: 100vh;
+}
+
+#gameOverWindow {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	background: none;
+	padding: 40px;
+	text-align: center;
+	color: white;
+	font-family: 'Courier New', Courier, monospace;
+	z-index: 10;
+}
+
+#gameOverWindow h1 {
+	font-size: 48px;
+	font-weight: bold;
+	margin-bottom: 20px;
+	letter-spacing: 2px;
+	pointer-events: none;
+	user-select: none;
+}
+
+#gameOverWindow button {
+	background: rgba(0, 0, 0, 0.8);
+	border: 2px solid white;
+	color: white;
+	padding: 10px 20px;
+	font-size: 16px;
+}
+
+#gameOverWindow button:hover {
+	background: rgba(0, 0, 0, 1);
+	transform: scale(1.1);
+	cursor: pointer;
+	border-radius: 10px;
+}
+
+.hidden {
+	display: none;
+}
+
+.overlay {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	background: none;
+	padding: 40px;
+	text-align: center;
+	color: white;
+	font-family: 'Courier New', Courier, monospace;
+	z-index: 10;
+}
+
+.overlay-content h1 {
+	font-size: 48px;
+	margin-bottom: 20px;
+	pointer-events: none;
+	user-select: none;
+}
+
+.overlay-content button {
+	background: rgba(0, 0, 0, 0.8);
+	border: 2px solid white;
+	color: white;
+	padding: 10px 20px;
+	font-size: 16px;
+}
+
+.overlay-content button:hover {
+	background: rgba(0, 0, 0, 1);
+	transform: scale(1.1);
+	cursor: pointer;
+	border-radius: 10px;
+}
+
+#helpWindow {
+	text-align: center;
+	font-size: 16px;
+	position: absolute;
+	top: 20px;
+	left: 20px;
+	color: white;
+	font-family: 'Courier New', Courier, monospace;
+	background: none;
+	border: none;
+	z-index: 10;
+	pointer-events: none;
+	user-select: none;
+	text-shadow: 1px 1px 2px black;
+}
+
+#gameOverlay {
+	position: fixed;
+	top: 20px;
+	left: 20px;
+	color: white;
+	font-family: 'Courier New', Courier, monospace;
+	font-size: 16px;
+	background: none;
+	border: none;
+	z-index: 10;
+	display: none;
+	user-select: none;
+	text-shadow: 1px 1px 2px black;
+}
+
+footer {
+	position: fixed;
+	bottom: 10px;
+	width: 100%;
+	text-align: center;
+	color: white;
+	font-family: 'Courier New', Courier, monospace;
+	z-index: 15;
+	pointer-events: none;
+	user-select: none;
+	text-shadow: 1px 1px 2px black;
+}
+
+footer a {
+	color: white;
+    font-weight: bold;
+    text-decoration: none;
+	pointer-events: auto;
+}
+
+footer a:hover {
+	text-decoration: underline;
+}
+
+footer.hidden {
+	display: none;
 }
