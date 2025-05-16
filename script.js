@@ -2,7 +2,7 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 let isGameOver = false;
 const MIN_ASTEROID_SIZE = 18;
-const ASTEROID_COUNT = 20;
+const ASTEROID_COUNT = 17;
 
 let isGameStarted = false;
 let wave = 1;
@@ -12,6 +12,9 @@ let missilesFired = 0;
 
 const startOverlay = document.getElementById('startOverlay');
 const startButton = document.getElementById('startButton');
+
+let waveMessage = '';
+let waveMessageTimer = 0;
 
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
@@ -29,6 +32,14 @@ class Ship {
 	update() {
 		this.x += Math.cos(this.angle) * this.speed;
 		this.y += Math.sin(this.angle) * this.speed;
+		
+		
+		if (this.speed > 0.2) {
+			const offsetX = this.x - Math.cos(this.angle) * 12;
+			const offsetY = this.y - Math.sin(this.angle) * 12 + 8 * (2 * Math.random() - 1);
+			particles.push(new Particle(offsetX, offsetY, this.angle, this.speed));
+		}
+		
 		if (this.x < 0) this.x = canvas.width;
 		if (this.x > canvas.width) this.x = 0;
 		if (this.y < 0) this.y = canvas.height;
@@ -165,9 +176,36 @@ class Missile {
 	}
 }
 
+class Particle {
+	constructor(x, y, angle, speed) {
+		this.x = x;
+		this.y = y;
+		this.radius = 0.8 * (Math.random() * 1.5 + 0.5);
+		this.life = 1.1 * (40 + Math.random() * 10);
+		this.angle = angle + (Math.random() - 0.5) * 0.6;
+		this.speed = speed * 0.3 + Math.random() * 0.5;
+		this.alpha = 1;
+	}
+
+	update() {
+		this.x -= Math.cos(this.angle) * this.speed;
+		this.y -= Math.sin(this.angle) * this.speed;
+		this.life--;
+		this.alpha = Math.max(0, this.life / 40);
+	}
+
+	draw() {
+		ctx.beginPath();
+		ctx.arc(this.x, this.y, this.radius, 0, 2 * Math.PI);
+		ctx.fillStyle = `rgba(${200 + this.life * 1.5},${145 - this.life},${50 - 0.5 * this.life},${this.alpha})`;
+		ctx.fill();
+	}
+}
+
 const ship = new Ship();
 const asteroids = [];
 const missiles = [];
+const particles = [];
 
 let canShoot = true;
 
@@ -207,10 +245,36 @@ const keys = {};
 
 window.addEventListener('keydown', (e) => {
 	keys[e.key] = true;
+	const key = e.key;
+	
+	if (!isGameStarted && (key === ' ' || key === 'Enter')) {
+		e.preventDefault();
+		startButton.click();
+	} else if (e.key === ' ') {
+		if (canShoot && !isGameOver) {
+			const offset = ship.radius + 8;
+			const missileX = ship.x + Math.cos(ship.angle) * offset;
+			const missileY = ship.y + Math.sin(ship.angle) * offset;
+			missiles.push(new Missile(missileX, missileY, ship.angle, ship.speed));
+			missilesFired++;
+			canShoot = false;
+		}
+	}
+
+	if (isGameOver && (key === ' ' || key === 'Enter')) {
+		e.preventDefault();
+		const restartButton = document.getElementById('restartButton');
+		if (restartButton) {
+			restartButton.click();
+		}
+	}
 });
 
 window.addEventListener('keyup', (e) => {
 	keys[e.key] = false;
+	if (e.key === ' ') {
+		canShoot = true;
+	}
 });
 
 function detectCollision(ship, asteroid) {
@@ -357,6 +421,47 @@ function splitAsteroid(asteroid, collisionVector) {
 		return fragments;
 }
 
+const starLayers = [
+	{ count: 100, speed: {x: 0.02, y: 0.006}, stars: [], opacity: 0.4 },
+	{ count: 60, speed: {x: 0.01, y: 0.003}, stars: [], opacity: 0.2 },
+	{ count: 30, speed: {x: 0.005, y: 0.0015}, stars: [], opacity: 0.1 },
+];
+
+function initStars() {
+	for (let layer of starLayers) {
+		layer.stars = [];
+		for (let i = 0; i < layer.count; i++) {
+			layer.stars.push({
+				x: Math.random() * canvas.width,
+				y: Math.random() * canvas.height,
+			});
+		}
+	}
+}
+
+initStars();
+
+function updateAndDrawStars() {
+	for (let layer of starLayers) {
+		ctx.fillStyle = `rgba(236,230,230,${layer.opacity * (1 - 0.5 * Math.sin(Date.now() / 500 * layer.opacity)**2)})`;
+		for (let star of layer.stars) {
+			star.x -= layer.speed.x * wave;
+			star.y -= layer.speed.y * wave;
+			if (star.x < 0) {
+				star.x = canvas.width;
+				star.y = Math.random() * canvas.height;
+			}
+			if (star.y < 0) {
+				star.y = canvas.height;
+				star.x = Math.random() * canvas.width;
+			}
+			ctx.beginPath();
+			ctx.arc(star.x, star.y, 1.2, 0, Math.PI * 2);
+			ctx.fill();
+		}
+	}
+}
+
 function drawVibratingWindow() {
 	const x = canvas.width / 2;
 	const y = canvas.height / 2;
@@ -386,27 +491,6 @@ function drawVibratingWindow() {
 	ctx.restore();
 }
 
-window.addEventListener('keydown', (e) => {
-	keys[e.key] = true;
-	if (e.key === ' ') {
-		if (canShoot && !isGameOver) {
-			const offset = ship.radius + 8;
-			const missileX = ship.x + Math.cos(ship.angle) * offset;
-			const missileY = ship.y + Math.sin(ship.angle) * offset;
-			missiles.push(new Missile(missileX, missileY, ship.angle, ship.speed));
-			missilesFired++;
-			canShoot = false;
-		}
-	}
-});
-
-window.addEventListener('keyup', (e) => {
-	keys[e.key] = false;
-	if (e.key === ' ') {
-		canShoot = true;
-	}
-});
-
 function updateOverlay() {
 	const now = Date.now();
 	const elapsedSeconds = ((now - gameStartTime) / 1000).toFixed(1);
@@ -428,8 +512,14 @@ function hideOverlay() {
 	document.getElementById('gameOverlay').style.display = 'none';
 }
 
+function showWaveMessage(waveNumber) {
+	waveMessage = `WAVE ${waveNumber}`;
+	waveMessageTimer = 300;
+}
+
 function gameLoop() {
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
+	updateAndDrawStars();
 
 	if (!isGameOver) {
 		updateOverlay();
@@ -471,6 +561,15 @@ function gameLoop() {
 		
 		resolveAsteroidDestruction();
 		
+		for (let i = particles.length - 1; i >= 0; i--) {
+			particles[i].update();
+			if (particles[i].life <= 0) {
+				particles.splice(i, 1);
+			} else {
+				particles[i].draw();
+			}
+		}
+		
 		ship.update();
 		ship.draw();
 
@@ -496,6 +595,15 @@ function gameLoop() {
 		if (asteroids.length == 0) {
 			wave++;
 			createAsteroid(Math.floor(ASTEROID_COUNT * wave));
+			showWaveMessage(wave);
+		}
+		
+		if (waveMessageTimer > 0) {
+			ctx.font = 'bold 90px Courier';
+			ctx.fillStyle = 'white';
+			ctx.textAlign = 'center';
+			ctx.fillText(waveMessage, canvas.width / 2, canvas.height / 2);
+			waveMessageTimer--;
 		}
 	} else {
 		ship.draw();
@@ -529,7 +637,9 @@ startButton.addEventListener('click', () => {
 
 function preGameLoop() {
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
-
+	
+	updateAndDrawStars();
+	
 	if (!isGameStarted) {
 		drawVibratingWindow();
 		
