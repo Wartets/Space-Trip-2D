@@ -1,20 +1,30 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 let isGameOver = false;
-const MIN_ASTEROID_SIZE = 18;
-const ASTEROID_COUNT = 17;
-
 let isGameStarted = false;
 let wave = 1;
 let asteroidsDestroyed = 0;
 let gameStartTime = 0;
 let missilesFired = 0;
+let canShoot = true;
+let isExploding = false;
+let explosionStartTime = 0;
+
+const keys = {};
 
 const startOverlay = document.getElementById('startOverlay');
 const startButton = document.getElementById('startButton');
-
 let waveMessage = '';
 let waveMessageTimer = 0;
+
+const MIN_ASTEROID_SIZE = 18;
+const ASTEROID_COUNT = 17;
+const RED_ASTEROID_COUNT = 3;
+const RED_ASTEROID_COLOR = 'red';
+const EXPLOSION_RADIUS = 150;
+const EXPLOSION_FORCE = 3;
+const EXPLOSION_DURATION = 1000; // en ms
+const SHIP_RADIUS = 14;
 
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
@@ -26,7 +36,7 @@ class Ship {
 		this.angle = Math.random() * Math.PI * 2;
 		this.speed = 0;
 		this.rotationSpeed = 0;
-		this.radius = 14;
+		this.radius = SHIP_RADIUS;
 	}
 
 	update() {
@@ -49,50 +59,76 @@ class Ship {
 	draw() {
 		let vibration1 = 2 * Math.random() - 1;
 		let vibration2 = 2 * Math.random() - 1;
-		
-		ctx.save();
-		ctx.translate(this.x, this.y);
-		ctx.rotate(this.angle);
-		ctx.beginPath();
-		ctx.moveTo(18 + vibration2 / 2, 0);
-		ctx.lineTo(-7, 10);
-		ctx.lineTo(-7, -10);
-		ctx.closePath();
-		ctx.strokeStyle = 'white';
-		ctx.stroke();
-		
-		ctx.beginPath();
-		ctx.strokeStyle = 'white';
-		ctx.arc(0, 0, 2.5, -1, 1);
-		ctx.stroke();
-		
-		/* ctx.beginPath(); // Rayon de collision
-		ctx.strokeStyle = 'white';
-		ctx.arc(0, 0, this.radius, 0, 2 * Math.PI, 0);
-		ctx.stroke(); */
-		
-		ctx.beginPath();
-		ctx.strokeStyle = 'gray';
-		ctx.arc(vibration1, vibration2, 3.5, 0, 2 * Math.PI);
-		ctx.stroke();
-		
-		ctx.beginPath();
-		ctx.moveTo(-7, 7);
-		ctx.lineTo(-13 + vibration1 / 2, 9 + vibration2);
-		ctx.lineTo(-13 + vibration1 / 2, -9 + vibration2);
-		ctx.lineTo(-7, -7);
-		ctx.closePath();
-		ctx.strokeStyle = 'white';
-		ctx.stroke();
-		
-		ctx.beginPath();
-		ctx.moveTo(14 + vibration1, vibration2);
-		ctx.lineTo(-10 + vibration1 + vibration2 / 2, 7 + vibration2);
-		ctx.lineTo(-10 + vibration1 + vibration2 / 2, -7 + vibration2);
-		ctx.closePath();
-		ctx.strokeStyle = 'gray';
-		ctx.stroke();
-		ctx.restore();
+		if (isGameOver) {
+			ctx.save();
+			ctx.translate(this.x, this.y);
+			// ctx.rotate(- Math.PI / 2);
+			
+			ctx.beginPath();
+			ctx.moveTo(-14 - vibration1, -11);
+			ctx.lineTo(-14 - vibration1, 11 + vibration2);
+			ctx.lineTo(14 + vibration1, 11 + vibration2);
+			ctx.lineTo(14 + vibration1, -11);
+			ctx.strokeStyle = 'white';
+			ctx.stroke();
+			
+			ctx.beginPath();
+			ctx.strokeStyle = 'shite';
+			ctx.arc(0, -11, 14 + vibration1, 0, Math.PI, 1);
+			ctx.stroke();
+			
+			ctx.font = 'bold 8.5px Courier';
+			ctx.fillStyle = 'gray';
+			ctx.textAlign = 'center';
+			ctx.fillText('R.I.P', 0, -4.5);
+			
+			ctx.restore();
+		}
+		else {
+			ctx.save();
+			ctx.translate(this.x, this.y);
+			ctx.rotate(this.angle);
+			ctx.beginPath();
+			ctx.moveTo(18 + vibration2 / 2, 0);
+			ctx.lineTo(-7, 10);
+			ctx.lineTo(-7, -10);
+			ctx.closePath();
+			ctx.strokeStyle = 'white';
+			ctx.stroke();
+			
+			ctx.beginPath();
+			ctx.strokeStyle = 'white';
+			ctx.arc(0, 0, 2.5, -1, 1);
+			ctx.stroke();
+			
+			/* ctx.beginPath(); // Rayon de collision
+			ctx.strokeStyle = 'white';
+			ctx.arc(0, 0, this.radius, 0, 2 * Math.PI, 0);
+			ctx.stroke(); */
+			
+			ctx.beginPath();
+			ctx.strokeStyle = 'gray';
+			ctx.arc(vibration1, vibration2, 3.5, 0, 2 * Math.PI);
+			ctx.stroke();
+			
+			ctx.beginPath();
+			ctx.moveTo(-7, 7);
+			ctx.lineTo(-13 + vibration1 / 2, 9 + vibration2);
+			ctx.lineTo(-13 + vibration1 / 2, -9 + vibration2);
+			ctx.lineTo(-7, -7);
+			ctx.closePath();
+			ctx.strokeStyle = 'white';
+			ctx.stroke();
+			
+			ctx.beginPath();
+			ctx.moveTo(14 + vibration1, vibration2);
+			ctx.lineTo(-10 + vibration1 + vibration2 / 2, 7 + vibration2);
+			ctx.lineTo(-10 + vibration1 + vibration2 / 2, -7 + vibration2);
+			ctx.closePath();
+			ctx.strokeStyle = 'gray';
+			ctx.stroke();
+			ctx.restore();
+		}
 	}
 }
 
@@ -141,6 +177,56 @@ class Asteroid {
 		}
 		ctx.closePath();
 		ctx.strokeStyle = 'gray';
+		ctx.stroke();
+		ctx.restore();
+	}
+}
+
+class RedAsteroid {
+	constructor() {
+		this.x = Math.random() * canvas.width;
+		this.y = Math.random() * canvas.height;
+		this.size = 50 + Math.random() * 15 - Math.min(5 * (wave - 1), 40 - MIN_ASTEROID_SIZE);
+		this.speedX = (Math.random() - 0.5) * (2 + 0.31 * (wave - 1));
+		this.speedY = (Math.random() - 0.5) * (2 + 0.31 * (wave - 1));
+		this.sides = 5 + Math.floor(Math.random() * 5);
+		this.angle = Math.random() * Math.PI * 2;
+		this.rotationSpeed = (Math.random() - 0.5) * 0.02;
+	}
+
+	updatePosition() {
+		this.x += this.speedX;
+		this.y += this.speedY;
+		if (this.x < -this.size) this.x = canvas.width + this.size;
+		if (this.x > canvas.width + this.size) this.x = -this.size;
+		if (this.y < -this.size) this.y = canvas.height + this.size;
+		if (this.y > canvas.height + this.size) this.y = -this.size;
+	}
+
+	updateRotation() {
+		this.angle += this.rotationSpeed;
+	}
+
+	update() {
+		this.updatePosition();
+		this.updateRotation();
+	}
+
+	draw() {
+		ctx.save();
+		ctx.translate(this.x, this.y);
+		ctx.rotate(this.angle);
+		ctx.beginPath();
+		for (let i = 0; i < this.sides; i++) {
+			const theta = (i / this.sides) * Math.PI * 2;
+			const r = this.size * (0.7 + Math.random() * 0.3);
+			const px = Math.cos(theta) * r;
+			const py = Math.sin(theta) * r;
+			if (i === 0) ctx.moveTo(px, py);
+			else ctx.lineTo(px, py);
+		}
+		ctx.closePath();
+		ctx.strokeStyle = 'red';
 		ctx.stroke();
 		ctx.restore();
 	}
@@ -203,11 +289,76 @@ class Particle {
 }
 
 const ship = new Ship();
-const asteroids = [];
-const missiles = [];
-const particles = [];
+let asteroids = [];
+let redAsteroids = [];
+let missiles = [];
+let particles = [];
+const explosions = [];
 
-let canShoot = true;
+function createExplosionEffect(x, y) {
+	const particleCount = 30;
+	const particles = [];
+
+	for (let i = 0; i < particleCount; i++) {
+		const angle = Math.random() * 2 * Math.PI;
+		const speed = Math.random() * EXPLOSION_FORCE + 1;
+		const size = Math.random() * 3 + 2;
+
+		particles.push({
+			x: x + (2 * Math.random() - 1) * size * 2,
+			y: y + (2 * Math.random() - 1) * size * 2,
+			vx: Math.cos(angle) * speed,
+			vy: Math.sin(angle) * speed,
+			size: size,
+			alpha: 1,
+			life: EXPLOSION_DURATION,
+			color: RED_ASTEROID_COLOR,
+		});
+	}
+
+	explosions.push({
+		particles: particles,
+		startTime: performance.now()
+	});
+}
+
+function updateAndDrawExplosions(ctx) {
+	for (let i = explosions.length - 1; i >= 0; i--) {
+		const explosion = explosions[i];
+		const now = performance.now();
+		const elapsed = now - explosion.startTime;
+
+		if (elapsed > EXPLOSION_DURATION) {
+			explosions.splice(i, 1);
+			continue;
+		}
+
+		for (let p of explosion.particles) {
+			p.x += p.vx;
+			p.y += p.vy;
+			p.alpha = 1 - elapsed / EXPLOSION_DURATION;
+			p.vx *= 0.97;
+			p.vy *= 0.97;
+
+			const dx = p.x - ship.x;
+			const dy = p.y - ship.y;
+			if (Math.hypot(dx, dy) < ship.radius) {
+				isGameOver = true;
+				showGameOver();
+			}
+		}
+
+		for (let p of explosion.particles) {
+			ctx.save();
+			ctx.globalAlpha = p.alpha;
+			ctx.fillStyle = p.color;
+			ctx.beginPath();
+			ctx.arc(p.x, p.y, p.size, 0, 2 * Math.PI);
+			ctx.fill();
+			ctx.restore();
+		}
+	}
+}
 
 function isTooCloseToShip(x, y, size, ship) {
 	const dx = ship.x - x;
@@ -216,12 +367,12 @@ function isTooCloseToShip(x, y, size, ship) {
 	return distance < ship.radius + size + 55;
 }
 
-function isOverlappingWithOtherAsteroids(x, y, size, existingAsteroids) {
-	for (let asteroid of existingAsteroids) {
-		const dx = asteroid.x - x;
-		const dy = asteroid.y - y;
+function isOverlappingWithOtherAsteroids(x, y, size, asteroidArray) {
+	for (const other of asteroidArray) {
+		const dx = x - other.x;
+		const dy = y - other.y;
 		const distance = Math.sqrt(dx * dx + dy * dy);
-		if (distance < (size + asteroid.size) * 0.5 + 10) {
+		if (distance < size + other.size) {
 			return true;
 		}
 	}
@@ -241,7 +392,33 @@ function createAsteroid(count) {
 	}
 };
 
-const keys = {};
+function createRedAsteroid(count) {
+	for (let i = 0; i < count; ) {
+		const tempAsteroid = new RedAsteroid();
+		if (
+			!isTooCloseToShip(tempAsteroid.x, tempAsteroid.y, tempAsteroid.size, ship) &&
+			!isOverlappingWithOtherAsteroids(tempAsteroid.x, tempAsteroid.y, tempAsteroid.size, asteroids)
+		) {
+			asteroids.push(tempAsteroid);
+			i++;
+		}
+	}
+};
+
+function createAsteroidsOfType(count, AsteroidClass, targetArray) {
+	for (let i = 0; i < count;) {
+		const tempAsteroid = new AsteroidClass();
+		if (
+			!isTooCloseToShip(tempAsteroid.x, tempAsteroid.y, tempAsteroid.size, ship) &&
+			!isOverlappingWithOtherAsteroids(tempAsteroid.x, tempAsteroid.y, tempAsteroid.size, [
+				...asteroids, ...redAsteroids, ...targetArray
+			])
+		) {
+			targetArray.push(tempAsteroid);
+			i++;
+		}
+	}
+}
 
 window.addEventListener('keydown', (e) => {
 	keys[e.key] = true;
@@ -339,6 +516,40 @@ function resolveAsteroidDestruction() {
 		if (hit) continue;
 	}
 };
+
+function resolveRedAsteroidExplosions() {
+	for (let i = missiles.length - 1; i >= 0; i--) {
+		const missile = missiles[i];
+		for (let j = redAsteroids.length - 1; j >= 0; j--) {
+			const redAsteroid = redAsteroids[j];
+			if (detectMissileAsteroidCollision(missile, redAsteroid)) {
+				const explosionX = redAsteroid.x;
+				const explosionY = redAsteroid.y;
+
+				createExplosionEffect(explosionX, explosionY);
+
+				missiles.splice(i, 1);
+				redAsteroids.splice(j, 1);
+
+				const pushTargets = [...asteroids, ...redAsteroids, ship];
+				for (let obj of pushTargets) {
+					const dx = obj.x - explosionX;
+					const dy = obj.y - explosionY;
+					const distance = Math.sqrt(dx * dx + dy * dy);
+					if (distance < EXPLOSION_RADIUS && distance > 0) {
+						const force = 5 * (1 - distance / EXPLOSION_RADIUS);
+						obj.vx += (dx / distance) * force;
+						obj.vy += (dy / distance) * force;
+					}
+				}
+				
+				asteroidsDestroyed++;
+
+				break;
+			}
+		}
+	}
+}
 
 function resolveAsteroidCollision(a, b) {
 	const tempX = a.speedX;
@@ -438,8 +649,6 @@ function initStars() {
 		}
 	}
 }
-
-initStars();
 
 function updateAndDrawStars() {
 	for (let layer of starLayers) {
@@ -560,6 +769,7 @@ function gameLoop() {
 		}
 		
 		resolveAsteroidDestruction();
+		resolveRedAsteroidExplosions();
 		
 		for (let i = particles.length - 1; i >= 0; i--) {
 			particles[i].update();
@@ -573,7 +783,9 @@ function gameLoop() {
 		ship.update();
 		ship.draw();
 
-		for (let asteroid of asteroids) {
+		const allAsteroids = [...asteroids, ...redAsteroids];
+
+		for (let asteroid of allAsteroids) {
 			asteroid.update();
 			asteroid.draw();
 			if (detectCollision(ship, asteroid)) {
@@ -581,20 +793,24 @@ function gameLoop() {
 				showGameOver();
 			}
 		}
-		
-		for (let i = 0; i < asteroids.length; i++) {
-			for (let j = i + 1; j < asteroids.length; j++) {
-				const a1 = asteroids[i];
-				const a2 = asteroids[j];
+
+		for (let i = 0; i < allAsteroids.length; i++) {
+			for (let j = i + 1; j < allAsteroids.length; j++) {
+				const a1 = allAsteroids[i];
+				const a2 = allAsteroids[j];
 				if (detectAsteroidCollision(a1, a2)) {
 					resolveAsteroidCollision(a1, a2);
 				}
 			}
 		}
-
-		if (asteroids.length == 0) {
+		
+		updateAndDrawExplosions(ctx, EXPLOSION_DURATION);
+		
+		if ((asteroids.length == 0) && (redAsteroids.length == 0)) {
 			wave++;
-			createAsteroid(Math.floor(ASTEROID_COUNT * wave));
+			createAsteroidsOfType(ASTEROID_COUNT * wave, Asteroid, asteroids);
+			createAsteroidsOfType(RED_ASTEROID_COUNT * wave, RedAsteroid, redAsteroids);
+			// createAsteroid(Math.floor(ASTEROID_COUNT * wave));
 			showWaveMessage(wave);
 		}
 		
@@ -644,7 +860,7 @@ function preGameLoop() {
 		drawVibratingWindow();
 		
 		ship.draw();
-		for (let asteroid of asteroids) {
+		for (let asteroid of [...asteroids, ...redAsteroids]) {
 			asteroid.updateRotation();
 			asteroid.draw();
 		}
@@ -655,6 +871,9 @@ function preGameLoop() {
 	}
 }
 
-createAsteroid(ASTEROID_COUNT);
+initStars();
+
+createAsteroidsOfType(ASTEROID_COUNT, Asteroid, asteroids);
+createAsteroidsOfType(RED_ASTEROID_COUNT, RedAsteroid, redAsteroids);
 
 preGameLoop();
