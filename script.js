@@ -709,6 +709,9 @@ function updateOverlay() {
 	document.getElementById('timePlayed').textContent = elapsedSeconds;
 	document.getElementById('wavesPassed').textContent = wave - 1;
 	document.getElementById('missilesFiredText').textContent = missilesFired;
+	if (missilesFired > 0) {
+		document.getElementById('fireAccuracy').textContent = (asteroidsDestroyed / missilesFired * 100).toFixed(0);
+	}
 }
 
 function showOverlay() {
