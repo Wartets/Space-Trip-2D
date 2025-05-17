@@ -42,7 +42,7 @@ const SHIP_RADIUS = 14;
 const SHIELD_RADIUS = SHIP_RADIUS + 7.3;
 const SAFETY_SPAWN_RADIUS = 60;
 
-let GOD_MODE = true;
+let GOD_MODE = false;
 let SHIELD = false;
 
 /* CLASS */
