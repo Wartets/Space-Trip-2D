@@ -818,7 +818,7 @@ function drawVibratingWindow() {
 	const sides = 5 + Math.floor(Math.random() * 2);
 	const radiusX = 230;
 	const radiusY = 140;
-	const angleOffset = Math.pi * Date.now() / 2;
+	const angleOffset = 0;
 
 	ctx.save();
 	ctx.translate(x, y);
@@ -826,7 +826,7 @@ function drawVibratingWindow() {
 	ctx.beginPath();
 	for (let i = 0; i <= sides; i++) {
 		const vibrate = 0.1 + 0.075 * (2 * Math.random() - 1);
-		const theta = (i / sides) * Math.PI * 2 + vibrate;
+		const theta = (i / sides) * Math.PI * 2 - Date.now() / 1000;
 		const rx = radiusX * ((1 - vibrate) + Math.random() * vibrate);
 		const ry = radiusY * ((1 - vibrate) + Math.random() * vibrate);
 		const px = Math.cos(theta) * rx;
