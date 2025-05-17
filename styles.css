@@ -144,3 +144,16 @@ footer a:hover {
 footer.hidden {
 	display: none;
 }
+
+#fpsCounter {
+	position: fixed;
+	top: 10px;
+	left: 50%;
+	transform: translateX(-50%);
+	color: white;
+	font-family: 'Courier New', Courier, monospace;
+	font-size: 16px;
+	background: none;
+	z-index: 10;
+	user-select: none;
+}
