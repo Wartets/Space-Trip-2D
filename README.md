@@ -45,9 +45,9 @@ Your mission is to:
 
 ---
 
-## 📱 Mobile Support
+## 📱 Mobile Support🚫
 
-This game is **mobile-web friendly** with touch-optimized UI elements and supports Apple mobile web apps.
+This game isn't **mobile-web**. 
 
 ---
 
